@@ -1,0 +1,74 @@
+#cloud-config
+hostname: ubuntu-arm-1765647808
+manage_etc_hosts: true
+
+users:
+  - name: ubuntu
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCrhVKCehH7noSWvaM5AxssaRUr30d5QYgkJkm1/K3yI56iJeBuM5af8YSbxLGezFpERQqhQ4949p6Wce3grq8BOsFe02+kUhUuasam0g6lQK88LkbYcarOJmLWxer2bNx223dA5yR0C61M2u7XgRRgPLOo9+6LT2zo1kdjCREMttyPjOwJml/YmfNVgRvopxYMwA1jQk1q/JgFSAsP2sVII7K+ItvXjwPTLvkeMaq5z24nsiPcLL6aKlR+s/zFdYkDIcFhE9SBGSBkLPDryrxXzhFaKX4+vsmyCY1O+8uV7XGc9CaIUIKvN0YzCAH6mes+LCZ2a0o+9Eamr0v8KI29 SSH Key pair for GitLab
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+
+chpasswd:
+  list: |
+    ubuntu:ubuntu
+  expire: false
+ssh_pwauth: true
+
+write_files:
+  # Netplan
+  - path: /etc/netplan/50-cloud-init.yaml
+    content: |
+      network:
+        version: 2
+        ethernets:
+          all:
+            match:
+              driver: virtio_net
+            dhcp4: true
+            optional: true
+            nameservers:
+              addresses: [8.8.8.8,8.8.4.4]
+
+  # Bring NIC up
+  - path: /etc/systemd/system/bring-up-nic.service
+    content: |
+      [Unit]
+      Description=Bring up virtio NIC
+      After=network-pre.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/sbin/ip link set  up
+      ExecStart=/sbin/dhclient 
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+
+  # Install Docker via Snap
+  - path: /etc/systemd/system/install-docker-snap.service
+    content: |
+      [Unit]
+      Description=Install Docker via Snap
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      Type=oneshot
+      ExecStart=/usr/bin/bash -c "
+        timeout 60 bash -c 'until ping -c1 8.8.8.8 &>/dev/null; do sleep 1; done'
+        snap install docker
+        snap alias docker.docker docker
+        usermod -aG docker ubuntu
+      "
+      RemainAfterExit=yes
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - systemctl enable bring-up-nic.service
+  - systemctl enable install-docker-snap.service
+  - echo "Launching VM on SSH port 3030..."
