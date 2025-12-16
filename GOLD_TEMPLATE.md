@@ -221,3 +221,7 @@ ssh -i ~/.ssh/id_rsa -p 3031 ubuntu@localhost
 |template cleanup | no conflicts |
 | read-only base | safe |
 
+## Useful reference:
+
+https://arianfm.medium.com/create-virtual-machine-with-cloud-image-and-cloud-init-config-using-qemu-kvm-8080ee6e7f05
+
