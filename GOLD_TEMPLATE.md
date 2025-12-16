@@ -24,7 +24,7 @@ We will:
 
 ## Recommended Directory Layout
 
-```text
+```
 ~/qemu/
 ├── templates/
 │   └── ubuntu-22.04-arm-template.qcow2
@@ -36,10 +36,12 @@ We will:
 │       ├── disk.qcow2
 │       └── seed.iso
 
+```
 
 # STEP 1 — Create the base VM (template)
 
 Download Ubuntu ARM cloud image (once):
+
 ```
 cd ~/qemu/templates
 wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-arm64.img
@@ -47,9 +49,9 @@ wget https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-arm64.i
 
 Convert it to qcow2 (optional but clean):
 ```
-  qemu-img convert -O qcow2 \
-  jammy-server-cloudimg-arm64.img \
-  ubuntu-22.04-arm-template.qcow2
+qemu-img convert -O qcow2 \
+jammy-server-cloudimg-arm64.img \
+ubuntu-22.04-arm-template.qcow2
 ```
 
 ## STEP 2 — Create seed ISO (cloud-init)
@@ -87,7 +89,7 @@ runcmd:
   - systemctl enable systemd-networkd
   - systemctl restart systemd-networkd
 ```
-```
+
 meta-data :
 ```
 instance-id: template
@@ -99,8 +101,9 @@ Create ISO:
 mkisofs -output seed.iso -volid cidata -joliet -rock user-data meta-data
 ```
 
-! You do NOT re-run this unless user-data changes.
-STEP 3 — Boot the template VM
+You do NOT re-run this unless user-data changes.
+
+## STEP 3 — Boot the template VM
 
 ```qemu-system-aarch64 \
   -machine virt,accel=hvf \
@@ -116,6 +119,7 @@ STEP 3 — Boot the template VM
 ```
 
 SSH in:
+
 ```
 ssh -i ~/.ssh/id_rsa -p 3030 ubuntu@localhost
 ```
